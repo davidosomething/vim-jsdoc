@@ -1,22 +1,26 @@
 " File: jsdoc.vim
-" Author: NAKAMURA, Hisashi <https://github.com/sunvisor>
-" Modifyed: Shinya Ohyanagi <sohyanagi@gmail.com>
+"
+" Author:   NAKAMURA, Hisashi <https://github.com/sunvisor>
+"
+" Contributors:
+" - Shinya Ohyanagi <sohyanagi@gmail.com>
+"   (https://github.com/heavenshell/vim-jsdoc/)
+" - David O'Trakoun <me@davidosomething.com>
+"   (https://github.com/davidosomething/vim-jsdoc/)
+"
 " Version:  0.7.0
-" WebPage:  http://github.com/heavenshell/vim-jsdoc/
+"
 " Description: Generate JSDoc to your JavaScript file.
 " License: BSD, see LICENSE for more details.
 
 let s:save_cpo = &cpo
 set cpo&vim
 
-let g:jsdoc_input_description       = get(g:, 'jsdoc_input_description')
 let g:jsdoc_additional_descriptions = get(g:, 'jsdoc_additional_descriptions')
 let g:jsdoc_return                  = get(g:, 'jsdoc_return', 1)
 let g:jsdoc_return_description      = get(g:, 'jsdoc_return_description', 1)
-let g:jsdoc_allow_input_prompt      = get(g:, 'jsdoc_allow_input_prompt')
 let g:jsdoc_access_descriptions     = get(g:, 'jsdoc_access_descriptions')
 let g:jsdoc_underscore_private      = get(g:, 'jsdoc_underscore_private')
-let g:jsdoc_allow_shorthand         = get(g:, 'jsdoc_allow_shorthand')
 let g:jsdoc_enable_es6              = get(g:, 'jsdoc_enable_es6')
 let g:jsdoc_custom_args_regex_only  = get(g:, 'jsdoc_custom_args_regex_only')
 
@@ -56,16 +60,13 @@ function! jsdoc#listDataTypes(A, L, P) abort
   return join(l:types, "\n")
 endfunction
 
-if g:jsdoc_allow_shorthand == 1
-  echohl Error | echomsg 'g:jsdoc_allow_shorthand is deprecated. Use g:jsdoc_enable_es6 instead.' | echohl None
-endif
-
 " FIXME
 " regex['arrow'] extracted extra chars.
 " If `const foo = (arg1, arg2) => true;` extracts `(arg`, `arg2)`.
 " We don't need `(` and `)`.
 " Currently `(` and `)` are deleted by substitute().
 " @see jsdoc#insert() for where these regexes are matched to the string
+" @see test/test.js for examples
 let s:regexs = {
       \   'function_declaration':  '^.\{-}\s*function\s*\*\?\s\+\([a-zA-Z_$][a-zA-Z0-9_$]*\)\s*\**(\s*\([^)]*\)\s*).*$',
       \   'function_expression':   '^.\{-}\s*\([a-zA-Z_$][a-zA-Z0-9_$]*\)\s*[:=]\s*function\s*\**\s*(\s*\([^)]*\)\s*).*$',
@@ -87,14 +88,6 @@ function! s:build_description(argType, arg) abort
       if has_key(g:jsdoc_type_hook[a:argType], 'description')
         let l:description = g:jsdoc_type_hook[a:argType]['description']
       endif
-    endif
-  endif
-
-  " Prompt for description
-  if l:override == 0
-    let l:inputDescription = input('Argument "' . a:arg . '" description: ')
-    if l:inputDescription !=# ''
-      let l:description = l:inputDescription
     endif
   endif
 
@@ -192,7 +185,7 @@ function! jsdoc#insert() abort
   elseif l:line =~ s:regexs['anonymous_function']
     let l:is_function = 1
     let l:regex       = s:regexs['anonymous_function']
-  elseif (g:jsdoc_allow_shorthand == 1 || g:jsdoc_enable_es6 == 1) && l:line =~ s:regexs['shorthand']
+  elseif g:jsdoc_enable_es6 == 1 && l:line =~ s:regexs['shorthand']
     let l:is_function = 1
     let l:regex       = s:regexs['shorthand']
   elseif g:jsdoc_enable_es6 == 1 && l:line =~ s:regexs['arrow']
@@ -202,7 +195,7 @@ function! jsdoc#insert() abort
   endif
 
   let l:lines = []
-  let l:desc = g:jsdoc_input_description == 1 ? input('Description: ') : ''
+  let l:desc = ''
   call add(l:lines, l:space . '/**')
   call add(l:lines, l:space . ' * ' . l:desc)
   call add(l:lines, l:space . ' *')
@@ -252,43 +245,14 @@ function! jsdoc#insert() abort
         " Remove `(` or `)` from args.
         let l:arg = substitute(l:arg, '\((\|)\)', '', '')
       endif
-
-      if g:jsdoc_allow_input_prompt == 1
-        let l:argType = input('Argument "' . l:arg . '" type: ', '', 'custom,jsdoc#listDataTypes')
-        let l:argDescription = s:build_description(l:argType, l:arg)
-        if g:jsdoc_custom_args_hook == {}
-          " Prepend separator to start of description only if it was provided
-          if l:argDescription !=# ''
-            let l:argDescription = g:jsdoc_param_description_separator . l:argDescription
-          endif
-          call add(l:lines, l:space . ' * @' . g:jsdoc_tags['param'] . ' {' . l:argType . '} ' . l:arg . l:argDescription)
-        else
-          let l:lines = s:hookArgs(l:lines, l:space, l:arg, l:hook, l:argType, l:argDescription)
-        endif
-      else
-        " Hook args.
-        let l:lines = s:hookArgs(l:lines, l:space, l:arg, l:hook, '', '')
-      endif
+      let l:lines = s:hookArgs(l:lines, l:space, l:arg, l:hook, '', '')
     endfor
   endif
 
   if g:jsdoc_return == 1
-    if g:jsdoc_allow_input_prompt == 1
-      let l:returnType = input('Return type (blank for no @' . g:jsdoc_tags['returns'] . '): ', '', 'custom,jsdoc#listDataTypes')
-      let l:returnDescription = ''
-      if l:returnType !=# ''
-        if g:jsdoc_return_description == 1
-          let l:returnDescription = input('Return description: ')
-        endif
-        if l:returnDescription !=# ''
-          let l:returnDescription = ' ' . l:returnDescription
-        endif
-        call add(l:lines, l:space . ' * @' . g:jsdoc_tags['returns'] . ' {' . l:returnType . '}' . l:returnDescription)
-      endif
-    else
-      call add(l:lines, l:space . ' * @' . g:jsdoc_tags['returns'] . ' {undefined}')
-    endif
+    call add(l:lines, l:space . ' * @' . g:jsdoc_tags['returns'] . ' {undefined}')
   endif
+
   call add(l:lines, l:space . ' */')
 
   let l:paste = &g:paste

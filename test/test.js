@@ -13,15 +13,56 @@ function namedFunctionDeclaration(_a2, err) { }
 
 function* namedGeneratorFunc(data) { }
 
-const namespace = {};
+const namespace = {
+
+  toString() { // ES6 style dec
+  },
+
+};
 
 namespace.x0 = function (e) { }; // anonymous method
 
-namespace.x1 = (e) => { }; // anonymous method shorthand
+namespace.x1 = (e) => { }; // anonymous arrow method
 
 namespace.x2 = function* (e) { }; // anonymous method generator
 
 namespace.x3 = function testing(e) { }; // named method
 
 namespace.x4 = function* testgen(description) { }; // named method generator
+
+namespace.x5 = () => 'hi'; // arrow function with auto returning body
+
+// arrow function, spread, with function body
+const xxx = (...args) => {
+  return 'bye';
+} 
+
+// arrow function, spread, with auto returning body
+const yyy = (...args) => 'hello';
+
+// arrow function, spread, with auto returning object
+const zzz = (...args) => ({ key: 'value' });
+
+// arrow function with no arg parens
+const aaa = v => 'vvv';
+
+const bbb = v => ({ item: 'vvv' });
+
+const ccc = v => {
+  return v || false;
+};
+
+class ExampleClass {
+  somefunc(somearg) {
+  }
+
+  get getterfunc() {
+  }
+
+  set setter(value) {
+  }
+
+  static staticfunc(staticarg) {
+  }
+}
 
