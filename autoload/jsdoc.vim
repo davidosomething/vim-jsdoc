@@ -187,6 +187,7 @@ function! jsdoc#insert() abort
     let l:regex       = s:regexs['anonymous_function']
   elseif g:jsdoc_enable_es6 == 1 && l:line =~ s:regexs['shorthand']
     let l:is_function = 1
+    let l:is_named    = 1
     let l:regex       = s:regexs['shorthand']
   elseif g:jsdoc_enable_es6 == 1 && l:line =~ s:regexs['arrow']
     let l:is_function = 1
