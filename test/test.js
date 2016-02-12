@@ -85,12 +85,24 @@ const ccc = v => {
   return v || false;
 };
 
+function setnotasetter(x) {
+
+}
+
+var setnotasetter = function setnotasetter(x) {
+
+};
+
 class ExampleClass {
   somefunc(somearg) {
 
   }
 
   get getterfunc() {
+
+  }
+
+  setnotasetter(x) {
 
   }
 
